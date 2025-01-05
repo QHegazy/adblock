@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ad Blocker Detection</title>
+    <style>
+        /* ... (CSS styles from previous response) */
+    </style>
+</head>
+<body>
+    <div id="content">
+        <h1>Ad Hello</h1>
+        <h1>Welcome to My Website</h1>
+        <p>This is some example content.</p>
+        <p>If you have an ad blocker enabled, you may see a message.</p>
+    </div>
+
+    <script>
+        async function detectAdBlock() {
+            // Basic detection (remains the same)
+            const test = document.createElement('div');
+            test.innerHTML = '&nbsp;';
+            test.className = 'adsbox';
+            document.body.appendChild(test);
+            const basicBlocked = test.offsetHeight === 0 || test.style.display === 'none' || test.style.visibility === 'hidden';
+            test.remove();
+
+            // Advanced detection (using async/await)
+            let advancedBlocked = false;
+            try {
+                advancedBlocked = await new Promise((resolve) => {
+                    const testScript = document.createElement('script');
+                    testScript.src = 'ads/ads.js';
+                    testScript.onerror = () => resolve(true);
+                    testScript.onload = () => resolve(false);
+                    document.head.appendChild(testScript);
+                    setTimeout(() => resolve(true), 500); // Timeout
+                });
+            } catch (error) {
+                console.error("Error during advanced adblock detection:", error);
+                advancedBlocked = true; // Assume blocked on error
+            }
+
+
+            return basicBlocked || advancedBlocked; // Return true if either detection method finds a blocker
+        }
+
+        (async () => { // Immediately invoked async function expression (IIFE)
+            const isBlocked = await detectAdBlock();
+
+            if (isBlocked) {
+                const adBlockMessage = document.createElement('div');
+                adBlockMessage.id = 'adblock-message';
+                adBlockMessage.innerHTML = `
+                    <h2>We noticed you're using an ad blocker.</h2>
+                    <p>To support our site, please consider disabling it.</p>
+                    <button id="close-adblock-message">Close</button>
+                `;
+                document.body.appendChild(adBlockMessage);
+
+                document.getElementById('close-adblock-message').addEventListener('click', function() {
+                    adBlockMessage.remove();
+                });
+            }
+        })(); // Call the IIFE immediately
+
+    </script>
+</body>
+</html>
