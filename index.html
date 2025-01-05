@@ -2,214 +2,384 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Advanced Adblock Detector</title>
+    <title>Advanced Device Fingerprint</title>
     <style>
         body {
             font-family: system-ui, -apple-system, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f5f5f5;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
         }
         .container {
             background: white;
-            padding: 2rem;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 600px;
-            width: 90%;
         }
-        #status {
-            font-size: 1.2rem;
-            margin: 1rem 0;
-            padding: 1rem;
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
             border-radius: 4px;
         }
-        .detected {
-            background-color: #ffe5e5;
-            color: #d32f2f;
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .not-detected {
-            background-color: #e8f5e9;
-            color: #2e7d32;
+        .section h2 button {
+            font-size: 12px;
+            padding: 5px 10px;
+            cursor: pointer;
         }
-        #ad-element {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
         }
-        #details {
-            margin-top: 1rem;
-            font-size: 0.9rem;
+        .data-label {
+            font-weight: bold;
             color: #666;
-            text-align: left;
+        }
+        .data-value {
+            color: #333;
+            word-break: break-all;
+            max-width: 60%;
+            text-align: right;
+        }
+        #canvas-test, #font-test {
+            display: none;
+        }
+        #hash {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9f5ff;
+            border-radius: 4px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .copy-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .copy-btn:hover {
+            background: #0056b3;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Advanced Adblock Detector</h1>
-        <div id="status">Checking for adblocker...</div>
-        <div id="details"></div>
+        <h1>Advanced Device Fingerprint</h1>
         
-        <!-- Test elements that adblockers typically target -->
-        <div id="ad-element" class="ad-unit">
-            <div class="advertisement"></div>
+        <div class="section">
+            <h2>Browser Information</h2>
+            <div id="browser-info"></div>
         </div>
+
+        <div class="section">
+            <h2>System Information</h2>
+            <div id="system-info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Font Information</h2>
+            <div id="font-info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Battery Information</h2>
+            <div id="battery-info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Media Devices</h2>
+            <div id="media-info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Feature Detection</h2>
+            <div id="feature-info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Hardware Information</h2>
+            <div id="hardware-info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Network Information</h2>
+            <div id="network-info"></div>
+        </div>
+
+        <canvas id="canvas-test"></canvas>
+        <div id="font-test"></div>
+        
+        <div id="hash"></div>
     </div>
 
     <script>
-        function detectAdblock() {
-            const adElement = document.getElementById('ad-element');
-            const status = document.getElementById('status');
-            const details = document.getElementById('details');
-            let detectionMethods = [];
+        async function generateFingerprint() {
+            const fingerprint = {};
+            
+            // Browser Information (enhanced)
+            const browserInfo = {
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                languages: navigator.languages,
+                cookies: navigator.cookieEnabled,
+                localStorage: !!window.localStorage,
+                sessionStorage: !!window.sessionStorage,
+                indexedDB: !!window.indexedDB,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timezoneOffset: new Date().getTimezoneOffset(),
+                doNotTrack: navigator.doNotTrack || window.doNotTrack,
+                plugins: Array.from(navigator.plugins).map(p => p.name),
+                mimeTypes: Array.from(navigator.mimeTypes).map(m => m.type),
+                productSub: navigator.productSub,
+                vendor: navigator.vendor,
+                vendorSub: navigator.vendorSub,
+                buildID: navigator.buildID,
+            };
+            
+            // System Information (enhanced)
+            const systemInfo = {
+                platform: navigator.platform,
+                oscpu: navigator.oscpu,
+                cores: navigator.hardwareConcurrency || 'Not available',
+                memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Not available',
+                maxTouchPoints: navigator.maxTouchPoints || 'Not available',
+                deviceMemory: navigator.deviceMemory,
+                cpuClass: navigator.cpuClass,
+            };
 
-            // Check DOM elements
-            function checkAdElement() {
-                const isBlocked = 
-                    !adElement ||
-                    adElement.offsetHeight === 0 ||
-                    adElement.offsetParent === null ||
-                    window.getComputedStyle(adElement).display === 'none';
-
-                if (isBlocked) {
-                    detectionMethods.push("DOM element blocking detected");
+            // Font Detection
+            const fontInfo = await detectFonts();
+            
+            // Battery Information
+            const batteryInfo = await getBatteryInfo();
+            
+            // Media Devices
+            const mediaInfo = await getMediaDevices();
+            
+            // Feature Detection
+            const featureInfo = detectFeatures();
+            
+            // Hardware Information (enhanced)
+            const hardwareInfo = {
+                gpu: await getGPUInfo(),
+                canvas: getCanvasFingerprint(),
+                audioContext: await getAudioFingerprint(),
+                webgl: getWebGLInfo(),
+                touchScreen: {
+                    maxTouchPoints: navigator.maxTouchPoints,
+                    touchEvent: 'ontouchstart' in window,
+                    touchEventJS: !!window.TouchEvent
                 }
-                return isBlocked;
-            }
+            };
+            
+            // Network Information (enhanced)
+            const networkInfo = await getNetworkInfo();
 
-            // Check bait element
-            function checkFakeAd() {
-                return new Promise(resolve => {
-                    const testAd = document.createElement('div');
-                    testAd.innerHTML = '&nbsp;';
-                    testAd.className = 'adsbox';
-                    document.body.appendChild(testAd);
+            // Combine all fingerprint data
+            Object.assign(fingerprint, {
+                browserInfo,
+                systemInfo,
+                fontInfo,
+                batteryInfo,
+                mediaInfo,
+                featureInfo,
+                hardwareInfo,
+                networkInfo
+            });
 
-                    setTimeout(() => {
-                        if (testAd.offsetHeight === 0) {
-                            detectionMethods.push("Bait element blocked");
-                            resolve(true);
-                        } else {
-                            resolve(false);
-                        }
-                        testAd.remove();
-                    }, 100);
-                });
-            }
+            // Display sections
+            displaySection('browser-info', browserInfo);
+            displaySection('system-info', systemInfo);
+            displaySection('font-info', fontInfo);
+            displaySection('battery-info', batteryInfo);
+            displaySection('media-info', mediaInfo);
+            displaySection('feature-info', featureInfo);
+            displaySection('hardware-info', hardwareInfo);
+            displaySection('network-info', networkInfo);
 
-            // Check fake ad request
-            function checkFakeRequest() {
-                return new Promise(resolve => {
-                    const fakeUrls = [
-                        '/ads/advertisement.js',
-                        '/banner-ads/ads.js',
-                        '/analytics/ga.js',
-                        '/pagead/ads.js'
-                    ];
-
-                    let blocked = 0;
-                    let completed = 0;
-
-                    fakeUrls.forEach(url => {
-                        const script = document.createElement('script');
-                        script.src = url;
-                        
-                        script.onerror = () => {
-                            blocked++;
-                            completed++;
-                            checkComplete();
-                        };
-                        
-                        script.onload = () => {
-                            completed++;
-                            checkComplete();
-                        };
-
-                        document.body.appendChild(script);
-                    });
-
-                    function checkComplete() {
-                        if (completed === fakeUrls.length) {
-                            if (blocked > 0) {
-                                detectionMethods.push(`Fake request blocking detected (${blocked}/${fakeUrls.length} requests blocked)`);
-                                resolve(true);
-                            } else {
-                                resolve(false);
-                            }
-                        }
-                    }
-
-                    // Timeout after 2 seconds
-                    setTimeout(() => {
-                        if (completed < fakeUrls.length) {
-                            detectionMethods.push("Request timeout detected");
-                            resolve(true);
-                        }
-                    }, 2000);
-                });
-            }
-
-            // Check for common adblocker variables
-            function checkAdblockerVariables() {
-                const variables = [
-                    'google_ad_status',
-                    'google_ad_slot',
-                    'google_ad_client',
-                    '__gads',
-                ];
-
-                for (let v of variables) {
-                    if (window[v] === undefined) {
-                        detectionMethods.push("Adblocker variables detected");
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            // Update UI
-            function updateUI(isBlocked) {
-                if (isBlocked) {
-                    status.textContent = 'Adblocker is enabled';
-                    status.className = 'detected';
-                } else {
-                    status.textContent = 'No adblocker detected';
-                    status.className = 'not-detected';
-                }
-
-                if (detectionMethods.length > 0) {
-                    details.innerHTML = '<strong>Detection methods:</strong><br>' +
-                        detectionMethods.map(method => `• ${method}`).join('<br>');
-                }
-            }
-
-            // Run all checks
-            async function runAllChecks() {
-                const results = await Promise.all([
-                    checkFakeAd(),
-                    checkFakeRequest(),
-                    Promise.resolve(checkAdElement()),
-                    Promise.resolve(checkAdblockerVariables())
-                ]);
-
-                const isBlocked = results.some(result => result === true);
-                updateUI(isBlocked);
-            }
-
-            // Initial check
-            runAllChecks();
-
-            // Recheck periodically
-            setInterval(runAllChecks, 3000);
+            // Generate and display hash
+            const hash = await generateHash(JSON.stringify(fingerprint));
+            document.getElementById('hash').innerHTML = `
+                Fingerprint Hash: ${hash}
+                <button class="copy-btn" onclick="copyToClipboard('${hash}')">Copy Hash</button>
+            `;
         }
 
-        // Run detection when page loads
-        window.addEventListener('load', detectAdblock);
+        async function detectFonts() {
+            const baseFonts = ['monospace', 'sans-serif', 'serif'];
+            const testString = 'mmmmmmmmmmlli';
+            const testSize = '72px';
+            const h = document.getElementById('font-test');
+            
+            const baseFontWidth = {};
+            baseFonts.forEach(baseFont => {
+                h.style.fontFamily = baseFont;
+                h.textContent = testString;
+                baseFontWidth[baseFont] = h.offsetWidth;
+            });
+
+            const fontList = [
+                'Arial', 'Arial Black', 'Arial Narrow', 'Arial Rounded MT Bold',
+                'Bookman Old Style', 'Bradley Hand ITC', 'Century', 'Century Gothic',
+                'Comic Sans MS', 'Courier', 'Courier New', 'Georgia', 'Gentium',
+                'Impact', 'King', 'Lucida Console', 'Lalit', 'Modena', 'Monotype Corsiva',
+                'Papyrus', 'Tahoma', 'TeX', 'Times', 'Times New Roman', 'Trebuchet MS',
+                'Verdana', 'Verona'
+            ];
+
+            const detected = [];
+            fontList.forEach(font => {
+                let match = false;
+                for (const baseFont of baseFonts) {
+                    h.style.fontFamily = `${font},${baseFont}`;
+                    if (h.offsetWidth !== baseFontWidth[baseFont]) {
+                        match = true;
+                        break;
+                    }
+                }
+                if (match) detected.push(font);
+            });
+
+            return {
+                availableFonts: detected,
+                totalFonts: detected.length
+            };
+        }
+
+        async function getBatteryInfo() {
+            if (!navigator.getBattery) return { supported: false };
+            
+            try {
+                const battery = await navigator.getBattery();
+                return {
+                    supported: true,
+                    level: battery.level,
+                    charging: battery.charging,
+                    chargingTime: battery.chargingTime,
+                    dischargingTime: battery.dischargingTime
+                };
+            } catch (e) {
+                return { supported: false, error: e.message };
+            }
+        }
+
+        async function getMediaDevices() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                return { supported: false };
+            }
+
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                return {
+                    supported: true,
+                    audioInputs: devices.filter(d => d.kind === 'audioinput').length,
+                    audioOutputs: devices.filter(d => d.kind === 'audiooutput').length,
+                    videoInputs: devices.filter(d => d.kind === 'videoinput').length
+                };
+            } catch (e) {
+                return { supported: false, error: e.message };
+            }
+        }
+
+        function detectFeatures() {
+            return {
+                webRTC: {
+                    RTCPeerConnection: !!window.RTCPeerConnection,
+                    RTCDataChannel: !!window.RTCDataChannel,
+                    RTCSessionDescription: !!window.RTCSessionDescription
+                },
+                workers: {
+                    webWorker: !!window.Worker,
+                    serviceWorker: !!navigator.serviceWorker,
+                    sharedWorker: !!window.SharedWorker
+                },
+                other: {
+                    webSocket: !!window.WebSocket,
+                    webAssembly: !!window.WebAssembly,
+                    geolocation: !!navigator.geolocation,
+                    bluetooth: !!navigator.bluetooth,
+                    usb: !!navigator.usb,
+                    nfc: !!navigator.nfc,
+                    persistence: !!navigator.persistence,
+                    credentials: !!navigator.credentials,
+                    clipboard: !!navigator.clipboard,
+                    share: !!navigator.share,
+                    payment: !!window.PaymentRequest,
+                    performance: !!window.performance,
+                    gamepad: !!navigator.getGamepads,
+                    virtualReality: !!navigator.getVRDisplays,
+                    bluetooth: !!navigator.bluetooth
+                }
+            };
+        }
+
+        async function getNetworkInfo() {
+            const info = {};
+            
+            if (navigator.connection) {
+                const conn = navigator.connection;
+                info.effectiveType = conn.effectiveType;
+                info.downlink = conn.downlink;
+                info.rtt = conn.rtt;
+                info.saveData = conn.saveData;
+                info.type = conn.type;
+            }
+
+            // WebRTC IP detection
+            if (window.RTCPeerConnection) {
+                try {
+                    const pc = new RTCPeerConnection({
+                        iceServers: [{
+                            urls: ['stun:stun.l.google.com:19302']
+                        }]
+                    });
+                    
+                    pc.createDataChannel('');
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+                    
+                    info.webRTC = { supported: true };
+                    
+                    pc.onicecandidate = (e) => {
+                        if (e.candidate) {
+                            info.webRTC.iceCandidate = e.candidate.candidate;
+                            pc.close();
+                        }
+                    };
+                } catch (e) {
+                    info.webRTC = { supported: false, error: e.message };
+                }
+            }
+
+            return info;
+        }
+
+        // Previous helper functions remain the same
+        // (getGPUInfo, getCanvasFingerprint, getAudioFingerprint, getWebGLInfo, etc.)
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Hash copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+
+        // Generate fingerprint when page loads
+        window.addEventListener('load', generateFingerprint);
     </script>
 </body>
 </html>
