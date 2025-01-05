@@ -1,385 +1,231 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Advanced Device Fingerprint</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Device & User Information</title>
     <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .section {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #eee;
-            border-radius: 4px;
-        }
-        .section h2 {
-            margin-top: 0;
-            color: #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .section h2 button {
-            font-size: 12px;
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-        }
-        .data-label {
-            font-weight: bold;
-            color: #666;
-        }
-        .data-value {
-            color: #333;
-            word-break: break-all;
-            max-width: 60%;
-            text-align: right;
-        }
-        #canvas-test, #font-test {
-            display: none;
-        }
-        #hash {
-            margin-top: 20px;
-            padding: 15px;
-            background: #e9f5ff;
-            border-radius: 4px;
-            font-family: monospace;
-            word-break: break-all;
-        }
-        .copy-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-        .copy-btn:hover {
-            background: #0056b3;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .info {
+        background: white;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 15px;
+      }
+      .info h2 {
+        margin: 0 0 15px 0;
+        color: #2c3e50;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 8px;
+      }
+      .info pre {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        border: 1px solid #e9ecef;
+        overflow-x: auto;
+        margin: 0;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-left: 10px;
+      }
+      .status-online {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .status-offline {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
     </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Advanced Device Fingerprint</h1>
-        
-        <div class="section">
-            <h2>Browser Information</h2>
-            <div id="browser-info"></div>
-        </div>
-
-        <div class="section">
-            <h2>System Information</h2>
-            <div id="system-info"></div>
-        </div>
-
-        <div class="section">
-            <h2>Font Information</h2>
-            <div id="font-info"></div>
-        </div>
-
-        <div class="section">
-            <h2>Battery Information</h2>
-            <div id="battery-info"></div>
-        </div>
-
-        <div class="section">
-            <h2>Media Devices</h2>
-            <div id="media-info"></div>
-        </div>
-
-        <div class="section">
-            <h2>Feature Detection</h2>
-            <div id="feature-info"></div>
-        </div>
-
-        <div class="section">
-            <h2>Hardware Information</h2>
-            <div id="hardware-info"></div>
-        </div>
-
-        <div class="section">
-            <h2>Network Information</h2>
-            <div id="network-info"></div>
-        </div>
-
-        <canvas id="canvas-test"></canvas>
-        <div id="font-test"></div>
-        
-        <div id="hash"></div>
-    </div>
+  </head>
+  <body>
+    <h1>Device & User Information <span id="connection-status" class="status-badge"></span></h1>
+    <div id="device-info-container"></div>
 
     <script>
-        async function generateFingerprint() {
-            const fingerprint = {};
-            
-            // Browser Information (enhanced)
-            const browserInfo = {
-                userAgent: navigator.userAgent,
-                language: navigator.language,
-                languages: navigator.languages,
-                cookies: navigator.cookieEnabled,
-                localStorage: !!window.localStorage,
-                sessionStorage: !!window.sessionStorage,
-                indexedDB: !!window.indexedDB,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                timezoneOffset: new Date().getTimezoneOffset(),
-                doNotTrack: navigator.doNotTrack || window.doNotTrack,
-                plugins: Array.from(navigator.plugins).map(p => p.name),
-                mimeTypes: Array.from(navigator.mimeTypes).map(m => m.type),
-                productSub: navigator.productSub,
-                vendor: navigator.vendor,
-                vendorSub: navigator.vendorSub,
-                buildID: navigator.buildID,
-            };
-            
-            // System Information (enhanced)
-            const systemInfo = {
-                platform: navigator.platform,
-                oscpu: navigator.oscpu,
-                cores: navigator.hardwareConcurrency || 'Not available',
-                memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Not available',
-                maxTouchPoints: navigator.maxTouchPoints || 'Not available',
-                deviceMemory: navigator.deviceMemory,
-                cpuClass: navigator.cpuClass,
-            };
+      function getMobileDeviceInfo() {
+        // Enhanced Browser Identification
+        function identifyBrowser() {
+          const agent = navigator.userAgent.toLowerCase();
+          const browsers = [
+            {
+              name: "Opera",
+              check: () => agent.includes("opr") || agent.includes("opera")
+            },
+            {
+              name: "Brave",
+              check: () => "brave" in navigator || agent.includes("brave")
+            },
+            {
+              name: "Edge",
+              check: () => agent.includes("edg")
+            },
+            {
+              name: "Chrome",
+              check: () => agent.includes("chrome") && !agent.includes("edg") && !agent.includes("opr") && !("brave" in navigator)
+            },
+            {
+              name: "Firefox",
+              check: () => agent.includes("firefox")
+            },
+            {
+              name: "Safari",
+              check: () => agent.includes("safari") && !agent.includes("chrome")
+            }
+          ];
 
-            // Font Detection
-            const fontInfo = await detectFonts();
-            
-            // Battery Information
-            const batteryInfo = await getBatteryInfo();
-            
-            // Media Devices
-            const mediaInfo = await getMediaDevices();
-            
-            // Feature Detection
-            const featureInfo = detectFeatures();
-            
-            // Hardware Information (enhanced)
-            const hardwareInfo = {
-                gpu: await getGPUInfo(),
-                canvas: getCanvasFingerprint(),
-                audioContext: await getAudioFingerprint(),
-                webgl: getWebGLInfo(),
-                touchScreen: {
-                    maxTouchPoints: navigator.maxTouchPoints,
-                    touchEvent: 'ontouchstart' in window,
-                    touchEventJS: !!window.TouchEvent
-                }
-            };
-            
-            // Network Information (enhanced)
-            const networkInfo = await getNetworkInfo();
-
-            // Combine all fingerprint data
-            Object.assign(fingerprint, {
-                browserInfo,
-                systemInfo,
-                fontInfo,
-                batteryInfo,
-                mediaInfo,
-                featureInfo,
-                hardwareInfo,
-                networkInfo
-            });
-
-            // Display sections
-            displaySection('browser-info', browserInfo);
-            displaySection('system-info', systemInfo);
-            displaySection('font-info', fontInfo);
-            displaySection('battery-info', batteryInfo);
-            displaySection('media-info', mediaInfo);
-            displaySection('feature-info', featureInfo);
-            displaySection('hardware-info', hardwareInfo);
-            displaySection('network-info', networkInfo);
-
-            // Generate and display hash
-            const hash = await generateHash(JSON.stringify(fingerprint));
-            document.getElementById('hash').innerHTML = `
-                Fingerprint Hash: ${hash}
-                <button class="copy-btn" onclick="copyToClipboard('${hash}')">Copy Hash</button>
-            `;
+          const detected = browsers.find(browser => browser.check());
+          return detected ? detected.name : "Unknown";
         }
 
-        async function detectFonts() {
-            const baseFonts = ['monospace', 'sans-serif', 'serif'];
-            const testString = 'mmmmmmmmmmlli';
-            const testSize = '72px';
-            const h = document.getElementById('font-test');
+        // Enhanced GPU Information
+        function getGPUInfo() {
+          try {
+            const canvas = document.createElement("canvas");
+            const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+
+            if (!gl) return { supported: false, error: "WebGL not supported" };
+
+            const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+            const antialiasing = gl.getContextAttributes().antialias;
             
-            const baseFontWidth = {};
-            baseFonts.forEach(baseFont => {
-                h.style.fontFamily = baseFont;
-                h.textContent = testString;
-                baseFontWidth[baseFont] = h.offsetWidth;
-            });
-
-            const fontList = [
-                'Arial', 'Arial Black', 'Arial Narrow', 'Arial Rounded MT Bold',
-                'Bookman Old Style', 'Bradley Hand ITC', 'Century', 'Century Gothic',
-                'Comic Sans MS', 'Courier', 'Courier New', 'Georgia', 'Gentium',
-                'Impact', 'King', 'Lucida Console', 'Lalit', 'Modena', 'Monotype Corsiva',
-                'Papyrus', 'Tahoma', 'TeX', 'Times', 'Times New Roman', 'Trebuchet MS',
-                'Verdana', 'Verona'
-            ];
-
-            const detected = [];
-            fontList.forEach(font => {
-                let match = false;
-                for (const baseFont of baseFonts) {
-                    h.style.fontFamily = `${font},${baseFont}`;
-                    if (h.offsetWidth !== baseFontWidth[baseFont]) {
-                        match = true;
-                        break;
-                    }
-                }
-                if (match) detected.push(font);
-            });
-
             return {
-                availableFonts: detected,
-                totalFonts: detected.length
+              supported: true,
+              vendor: debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : "Unknown",
+              renderer: debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Unknown",
+              maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
+              maxViewportDimensions: gl.getParameter(gl.MAX_VIEWPORT_DIMS),
+              antialiasing: antialiasing ? "Enabled" : "Disabled",
+              version: gl.getParameter(gl.VERSION),
+              shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION)
             };
+          } catch (error) {
+            return { supported: false, error: error.message };
+          }
         }
 
-        async function getBatteryInfo() {
-            if (!navigator.getBattery) return { supported: false };
-            
-            try {
-                const battery = await navigator.getBattery();
-                return {
-                    supported: true,
-                    level: battery.level,
-                    charging: battery.charging,
-                    chargingTime: battery.chargingTime,
-                    dischargingTime: battery.dischargingTime
-                };
-            } catch (e) {
-                return { supported: false, error: e.message };
+        // Enhanced System Resources
+        function getSystemResources() {
+          return {
+            cpu: {
+              cores: navigator.hardwareConcurrency || "Unknown",
+              architecture: navigator.platform || "Unknown"
+            },
+            memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "Not detectable",
+            storage: {
+              quota: navigator.storage ? "Available" : "Not available",
+              persistent: navigator.persistentStorage ? "Supported" : "Not supported"
             }
+          };
         }
 
-        async function getMediaDevices() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-                return { supported: false };
-            }
-
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                return {
-                    supported: true,
-                    audioInputs: devices.filter(d => d.kind === 'audioinput').length,
-                    audioOutputs: devices.filter(d => d.kind === 'audiooutput').length,
-                    videoInputs: devices.filter(d => d.kind === 'videoinput').length
-                };
-            } catch (e) {
-                return { supported: false, error: e.message };
-            }
-        }
-
-        function detectFeatures() {
+        // Enhanced Network Information
+        function getNetworkInfo() {
+          const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+          if (connection) {
             return {
-                webRTC: {
-                    RTCPeerConnection: !!window.RTCPeerConnection,
-                    RTCDataChannel: !!window.RTCDataChannel,
-                    RTCSessionDescription: !!window.RTCSessionDescription
-                },
-                workers: {
-                    webWorker: !!window.Worker,
-                    serviceWorker: !!navigator.serviceWorker,
-                    sharedWorker: !!window.SharedWorker
-                },
-                other: {
-                    webSocket: !!window.WebSocket,
-                    webAssembly: !!window.WebAssembly,
-                    geolocation: !!navigator.geolocation,
-                    bluetooth: !!navigator.bluetooth,
-                    usb: !!navigator.usb,
-                    nfc: !!navigator.nfc,
-                    persistence: !!navigator.persistence,
-                    credentials: !!navigator.credentials,
-                    clipboard: !!navigator.clipboard,
-                    share: !!navigator.share,
-                    payment: !!window.PaymentRequest,
-                    performance: !!window.performance,
-                    gamepad: !!navigator.getGamepads,
-                    virtualReality: !!navigator.getVRDisplays,
-                    bluetooth: !!navigator.bluetooth
-                }
+              type: connection.effectiveType || "Unknown",
+              downlinkSpeed: connection.downlink ? `${connection.downlink} Mbps` : "Unknown",
+              rtt: connection.rtt ? `${connection.rtt} ms` : "Unknown",
+              saveData: connection.saveData ? "Enabled" : "Disabled"
             };
+          }
+          return "Network information not available";
         }
 
-        async function getNetworkInfo() {
-            const info = {};
-            
-            if (navigator.connection) {
-                const conn = navigator.connection;
-                info.effectiveType = conn.effectiveType;
-                info.downlink = conn.downlink;
-                info.rtt = conn.rtt;
-                info.saveData = conn.saveData;
-                info.type = conn.type;
-            }
-
-            // WebRTC IP detection
-            if (window.RTCPeerConnection) {
-                try {
-                    const pc = new RTCPeerConnection({
-                        iceServers: [{
-                            urls: ['stun:stun.l.google.com:19302']
-                        }]
-                    });
-                    
-                    pc.createDataChannel('');
-                    const offer = await pc.createOffer();
-                    await pc.setLocalDescription(offer);
-                    
-                    info.webRTC = { supported: true };
-                    
-                    pc.onicecandidate = (e) => {
-                        if (e.candidate) {
-                            info.webRTC.iceCandidate = e.candidate.candidate;
-                            pc.close();
-                        }
-                    };
-                } catch (e) {
-                    info.webRTC = { supported: false, error: e.message };
-                }
-            }
-
-            return info;
+        // Enhanced User Preferences
+        function getUserPreferences() {
+          return {
+            languages: navigator.languages || [navigator.language],
+            doNotTrack: navigator.doNotTrack || "Not set",
+            cookiesEnabled: navigator.cookieEnabled,
+            prefersReducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+            prefersDarkMode: window.matchMedia("(prefers-color-scheme: dark)").matches,
+            prefersReducedData: window.matchMedia("(prefers-reduced-data: reduce)").matches
+          };
         }
 
-        // Previous helper functions remain the same
-        // (getGPUInfo, getCanvasFingerprint, getAudioFingerprint, getWebGLInfo, etc.)
+        // Combine all information
+        return {
+          browser: {
+            name: identifyBrowser(),
+            userAgent: navigator.userAgent,
+            language: navigator.language,
+            cookies: navigator.cookieEnabled,
+            localStorage: !!window.localStorage,
+            sessionStorage: !!window.sessionStorage,
+            webGL: !!window.WebGLRenderingContext
+          },
+          user: {
+            preferences: getUserPreferences(),
+            timezone: Intl.DateTimeFormat().resolvedOptions(),
+            online: navigator.onLine
+          },
+          network: getNetworkInfo(),
+          gpu: getGPUInfo(),
+          system: getSystemResources(),
+          screen: {
+            width: window.screen.width,
+            height: window.screen.height,
+            colorDepth: window.screen.colorDepth,
+            pixelRatio: window.devicePixelRatio,
+            orientation: screen.orientation ? screen.orientation.type : "Unknown",
+            touchScreen: navigator.maxTouchPoints > 0
+          },
+          device: {
+            isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+            platform: navigator.platform,
+            vendor: navigator.vendor || "Unknown",
+            maxTouchPoints: navigator.maxTouchPoints || 0,
+            batteryAPI: "getBattery" in navigator ? "Supported" : "Not supported"
+          }
+        };
+      }
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('Hash copied to clipboard!');
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-            });
+      // Update connection status
+      function updateConnectionStatus() {
+        const statusBadge = document.getElementById('connection-status');
+        if (navigator.onLine) {
+          statusBadge.textContent = 'Online';
+          statusBadge.className = 'status-badge status-online';
+        } else {
+          statusBadge.textContent = 'Offline';
+          statusBadge.className = 'status-badge status-offline';
         }
+      }
 
-        // Generate fingerprint when page loads
-        window.addEventListener('load', generateFingerprint);
+      // Initial display
+      const deviceInfo = getMobileDeviceInfo();
+      console.log(deviceInfo);
+
+      const container = document.getElementById("device-info-container");
+      Object.entries(deviceInfo).forEach(([key, value]) => {
+        const section = document.createElement("div");
+        section.className = "info";
+        const title = document.createElement("h2");
+        title.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+        const content = document.createElement("pre");
+        content.textContent = JSON.stringify(value, null, 2);
+        section.appendChild(title);
+        section.appendChild(content);
+        container.appendChild(section);
+      });
+
+      // Add event listeners for online/offline status
+      window.addEventListener('online', updateConnectionStatus);
+      window.addEventListener('offline', updateConnectionStatus);
+      updateConnectionStatus();
     </script>
-</body>
+  </body>
 </html>
