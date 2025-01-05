@@ -5,116 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ad Blocker Detection</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        #ad-container {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .alert {
-            background: red;
-            color: white;
-            width: 100%;
-            padding: 1rem;
-            font-size: 1.2rem;
-            text-align: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 1000;
-        }
-        .alert button {
-            background: white;
-            color: red;
-            padding: 0.5rem 1rem;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        .alert button:hover {
-            background: #f1f1f1;
+        /* Simulate an ad element for testing */
+        #ad-element {
+            width: 300px;
+            height: 250px;
+            background-color: lightgray;
+            margin: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Welcome to Our Website</h1>
-    <p>Here is some content on the page.</p>
+    <h1>Ad Blocker Detection Example</h1>
 
-    <!-- Container for the ad or alternative content -->
-    <div id="ad-container">
-        <div class="adsbygoogle" id="ad-placeholder" style="height: 200px; background-color: #f3f3f3;">
-            <p>Placeholder for ads or promotions.</p>
-        </div>
+    <!-- Simulated ad element with iframe (more likely to be blocked) -->
+    <div id="ad-element">
+        <iframe src="https://www.example.com/ad" width="300" height="250"></iframe>
     </div>
 
-    <!-- JavaScript to detect ad blockers and show alternate content or persuasion banner -->
     <script>
-        /*** Ad Blocker Detection with Alternative Content and Persuasion Banner ***/
-
-        // Function to check if an ad blocker is active
-        function adBlockCheck() {
-            setTimeout(function() {
-                // Add a test ad element to the page with a class that is commonly blocked by ad blockers
-                document.body.innerHTML += `<div class="adsbygoogle" id="test-ad"></div>`;
-                
-                // Select the test ad and get its computed styles
-                const testAd = document.getElementById('test-ad');
-                const testAdStyle = getComputedStyle(testAd);
-
-                // Check if the ad element is hidden, which suggests an ad blocker is present
-                if (testAdStyle.display === 'none') {  
-                    // Ad Blocker detected
-                    handleAdBlock();
-                } else {
-                    // Ad Blocker not detected, possibly ads are being served
-                    console.log("Adblocker is not active. Ads can be shown.");
-                }
-            }, 1000);  // Delay to allow ad blocker to take effect
+        // 1. Check if an element is hidden (Ad-related element)
+        var adElement = document.getElementById('ad-element');
+        if (adElement && window.getComputedStyle(adElement).display === 'none') {
+            // Ad blocker detected
+            console.log('Ad blocker is active (ad element hidden).');
+        } else {
+            console.log('Ad element visible (ad blocker not detected).');
         }
 
-        // Handle the situation when an ad blocker is detected
-        function handleAdBlock() {
-            // Check if an element to show content exists
-            const adContainer = document.getElementById('ad-container');
+        // 2. Check if an ad-related script is blocked
+        var adScript = document.createElement('script');
+        adScript.src = 'https://s.yimg.com/zz/combo?yads-ads/yads-ads.js';  // Known ad script
+        adScript.async = true;
+        adScript.onload = function() {
+            // Ad script loaded successfully
+            console.log('Ad blocker may not be active (script loaded).');
+        };
+        adScript.onerror = function() {
+            // Ad script failed to load, possibly due to ad blocker
+            console.log('Ad blocker may be active (script blocked).');
+        };
+        document.head.appendChild(adScript);
 
-            if (adContainer) {
-                // If ad block is detected, replace ads with alternative content (like a promotional image)
-                const myImg = document.createElement('img');
-                myImg.src = 'https://your-image-url.com/image.png';  // Replace with your own image URL
-                adContainer.append(myImg);
-            } else {
-                // Show a persuasion banner instead (if ad container doesn't exist)
-                showPersuasionBanner();
+        // 3. Check if the document’s height changes (indicating removal of ad elements)
+        var initialHeight = document.body.clientHeight;
+        setInterval(function() {
+            if (document.body.clientHeight !== initialHeight) {
+                // Document height changed, indicating potential ad blocking
+                console.log('Ad blocker may be active (document height changed).');
             }
-        }
-
-        // Display a persuasive message to encourage users to disable their ad blocker
-        function showPersuasionBanner() {
-            const banner = document.createElement('div');
-            banner.innerHTML = `
-                <h3>Ad blocker detected</h3>
-                <p>We use ads to support our free content. Please consider disabling your ad blocker to support us.</p>
-                <button onclick="dismissBanner()">Close</button>
-            `;
-            banner.setAttribute('class', 'alert');
-
-            // Prepend the banner to the body
-            document.body.prepend(banner);
-        }
-
-        // Dismiss the persuasion banner when the user clicks close
-        function dismissBanner() {
-            const banner = document.querySelector('.alert');
-            if (banner) {
-                banner.style.display = 'none';
-            }
-        }
-
-        // Call the ad block check function
-        adBlockCheck();
+        }, 1000); // Check every second
     </script>
 </body>
 </html>
