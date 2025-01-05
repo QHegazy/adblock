@@ -2,69 +2,214 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ad Blocker Detection</title>
+    <title>Advanced Adblock Detector</title>
     <style>
-        /* ... (CSS styles from previous response) */
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        #status {
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+        .detected {
+            background-color: #ffe5e5;
+            color: #d32f2f;
+        }
+        .not-detected {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        #ad-element {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #details {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
-    <div id="content">
-        <h1>Ad Hello</h1>
-        <h1>Welcome to My Website</h1>
-        <p>This is some example content.</p>
-        <p>If you have an ad blocker enabled, you may see a message.</p>
+    <div class="container">
+        <h1>Advanced Adblock Detector</h1>
+        <div id="status">Checking for adblocker...</div>
+        <div id="details"></div>
+        
+        <!-- Test elements that adblockers typically target -->
+        <div id="ad-element" class="ad-unit">
+            <div class="advertisement"></div>
+        </div>
     </div>
 
     <script>
-        async function detectAdBlock() {
-            // Basic detection (remains the same)
-            const test = document.createElement('div');
-            test.innerHTML = '&nbsp;';
-            test.className = 'adsbox';
-            document.body.appendChild(test);
-            const basicBlocked = test.offsetHeight === 0 || test.style.display === 'none' || test.style.visibility === 'hidden';
-            test.remove();
+        function detectAdblock() {
+            const adElement = document.getElementById('ad-element');
+            const status = document.getElementById('status');
+            const details = document.getElementById('details');
+            let detectionMethods = [];
 
-            // Advanced detection (using async/await)
-            let advancedBlocked = false;
-            try {
-                advancedBlocked = await new Promise((resolve) => {
-                    const testScript = document.createElement('script');
-                    testScript.src = 'ads/ads.js';
-                    testScript.onerror = () => resolve(true);
-                    testScript.onload = () => resolve(false);
-                    document.head.appendChild(testScript);
-                    setTimeout(() => resolve(true), 500); // Timeout
-                });
-            } catch (error) {
-                console.error("Error during advanced adblock detection:", error);
-                advancedBlocked = true; // Assume blocked on error
+            // Check DOM elements
+            function checkAdElement() {
+                const isBlocked = 
+                    !adElement ||
+                    adElement.offsetHeight === 0 ||
+                    adElement.offsetParent === null ||
+                    window.getComputedStyle(adElement).display === 'none';
+
+                if (isBlocked) {
+                    detectionMethods.push("DOM element blocking detected");
+                }
+                return isBlocked;
             }
 
+            // Check bait element
+            function checkFakeAd() {
+                return new Promise(resolve => {
+                    const testAd = document.createElement('div');
+                    testAd.innerHTML = '&nbsp;';
+                    testAd.className = 'adsbox';
+                    document.body.appendChild(testAd);
 
-            return basicBlocked || advancedBlocked; // Return true if either detection method finds a blocker
+                    setTimeout(() => {
+                        if (testAd.offsetHeight === 0) {
+                            detectionMethods.push("Bait element blocked");
+                            resolve(true);
+                        } else {
+                            resolve(false);
+                        }
+                        testAd.remove();
+                    }, 100);
+                });
+            }
+
+            // Check fake ad request
+            function checkFakeRequest() {
+                return new Promise(resolve => {
+                    const fakeUrls = [
+                        '/ads/advertisement.js',
+                        '/banner-ads/ads.js',
+                        '/analytics/ga.js',
+                        '/pagead/ads.js'
+                    ];
+
+                    let blocked = 0;
+                    let completed = 0;
+
+                    fakeUrls.forEach(url => {
+                        const script = document.createElement('script');
+                        script.src = url;
+                        
+                        script.onerror = () => {
+                            blocked++;
+                            completed++;
+                            checkComplete();
+                        };
+                        
+                        script.onload = () => {
+                            completed++;
+                            checkComplete();
+                        };
+
+                        document.body.appendChild(script);
+                    });
+
+                    function checkComplete() {
+                        if (completed === fakeUrls.length) {
+                            if (blocked > 0) {
+                                detectionMethods.push(`Fake request blocking detected (${blocked}/${fakeUrls.length} requests blocked)`);
+                                resolve(true);
+                            } else {
+                                resolve(false);
+                            }
+                        }
+                    }
+
+                    // Timeout after 2 seconds
+                    setTimeout(() => {
+                        if (completed < fakeUrls.length) {
+                            detectionMethods.push("Request timeout detected");
+                            resolve(true);
+                        }
+                    }, 2000);
+                });
+            }
+
+            // Check for common adblocker variables
+            function checkAdblockerVariables() {
+                const variables = [
+                    'google_ad_status',
+                    'google_ad_slot',
+                    'google_ad_client',
+                    '__gads',
+                ];
+
+                for (let v of variables) {
+                    if (window[v] === undefined) {
+                        detectionMethods.push("Adblocker variables detected");
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // Update UI
+            function updateUI(isBlocked) {
+                if (isBlocked) {
+                    status.textContent = 'Adblocker is enabled';
+                    status.className = 'detected';
+                } else {
+                    status.textContent = 'No adblocker detected';
+                    status.className = 'not-detected';
+                }
+
+                if (detectionMethods.length > 0) {
+                    details.innerHTML = '<strong>Detection methods:</strong><br>' +
+                        detectionMethods.map(method => `• ${method}`).join('<br>');
+                }
+            }
+
+            // Run all checks
+            async function runAllChecks() {
+                const results = await Promise.all([
+                    checkFakeAd(),
+                    checkFakeRequest(),
+                    Promise.resolve(checkAdElement()),
+                    Promise.resolve(checkAdblockerVariables())
+                ]);
+
+                const isBlocked = results.some(result => result === true);
+                updateUI(isBlocked);
+            }
+
+            // Initial check
+            runAllChecks();
+
+            // Recheck periodically
+            setInterval(runAllChecks, 3000);
         }
 
-        (async () => { // Immediately invoked async function expression (IIFE)
-            const isBlocked = await detectAdBlock();
-
-            if (isBlocked) {
-                const adBlockMessage = document.createElement('div');
-                adBlockMessage.id = 'adblock-message';
-                adBlockMessage.innerHTML = `
-                    <h2>We noticed you're using an ad blocker.</h2>
-                    <p>To support our site, please consider disabling it.</p>
-                    <button id="close-adblock-message">Close</button>
-                `;
-                document.body.appendChild(adBlockMessage);
-
-                document.getElementById('close-adblock-message').addEventListener('click', function() {
-                    adBlockMessage.remove();
-                });
-            }
-        })(); // Call the IIFE immediately
-
+        // Run detection when page loads
+        window.addEventListener('load', detectAdblock);
     </script>
 </body>
 </html>
