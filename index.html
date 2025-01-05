@@ -1,231 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Device & User Information</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ad Blocker Detection</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 20px;
-        background-color: #f5f5f5;
-      }
-      .info {
-        background: white;
-        margin-bottom: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        padding: 15px;
-      }
-      .info h2 {
-        margin: 0 0 15px 0;
-        color: #2c3e50;
-        border-bottom: 2px solid #eee;
-        padding-bottom: 8px;
-      }
-      .info pre {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 4px;
-        border: 1px solid #e9ecef;
-        overflow-x: auto;
-        margin: 0;
-      }
-      .status-badge {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        margin-left: 10px;
-      }
-      .status-online {
-        background-color: #d4edda;
-        color: #155724;
-      }
-      .status-offline {
-        background-color: #f8d7da;
-        color: #721c24;
-      }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        #ad-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .alert {
+            background: red;
+            color: white;
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.2rem;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+        .alert button {
+            background: white;
+            color: red;
+            padding: 0.5rem 1rem;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .alert button:hover {
+            background: #f1f1f1;
+        }
     </style>
-  </head>
-  <body>
-    <h1>Device & User Information <span id="connection-status" class="status-badge"></span></h1>
-    <div id="device-info-container"></div>
+</head>
+<body>
+    <h1>Welcome to Our Website</h1>
+    <p>Here is some content on the page.</p>
 
+    <!-- Container for the ad or alternative content -->
+    <div id="ad-container">
+        <div class="adsbygoogle" id="ad-placeholder" style="height: 200px; background-color: #f3f3f3;">
+            <p>Placeholder for ads or promotions.</p>
+        </div>
+    </div>
+
+    <!-- JavaScript to detect ad blockers and show alternate content or persuasion banner -->
     <script>
-      function getMobileDeviceInfo() {
-        // Enhanced Browser Identification
-        function identifyBrowser() {
-          const agent = navigator.userAgent.toLowerCase();
-          const browsers = [
-            {
-              name: "Opera",
-              check: () => agent.includes("opr") || agent.includes("opera")
-            },
-            {
-              name: "Brave",
-              check: () => "brave" in navigator || agent.includes("brave")
-            },
-            {
-              name: "Edge",
-              check: () => agent.includes("edg")
-            },
-            {
-              name: "Chrome",
-              check: () => agent.includes("chrome") && !agent.includes("edg") && !agent.includes("opr") && !("brave" in navigator)
-            },
-            {
-              name: "Firefox",
-              check: () => agent.includes("firefox")
-            },
-            {
-              name: "Safari",
-              check: () => agent.includes("safari") && !agent.includes("chrome")
+        /*** Ad Blocker Detection with Alternative Content and Persuasion Banner ***/
+
+        // Function to check if an ad blocker is active
+        function adBlockCheck() {
+            setTimeout(function() {
+                // Add a test ad element to the page with a class that is commonly blocked by ad blockers
+                document.body.innerHTML += `<div class="adsbygoogle" id="test-ad"></div>`;
+                
+                // Select the test ad and get its computed styles
+                const testAd = document.getElementById('test-ad');
+                const testAdStyle = getComputedStyle(testAd);
+
+                // Check if the ad element is hidden, which suggests an ad blocker is present
+                if (testAdStyle.display === 'none') {  
+                    // Ad Blocker detected
+                    handleAdBlock();
+                } else {
+                    // Ad Blocker not detected, possibly ads are being served
+                    console.log("Adblocker is not active. Ads can be shown.");
+                }
+            }, 1000);  // Delay to allow ad blocker to take effect
+        }
+
+        // Handle the situation when an ad blocker is detected
+        function handleAdBlock() {
+            // Check if an element to show content exists
+            const adContainer = document.getElementById('ad-container');
+
+            if (adContainer) {
+                // If ad block is detected, replace ads with alternative content (like a promotional image)
+                const myImg = document.createElement('img');
+                myImg.src = 'https://your-image-url.com/image.png';  // Replace with your own image URL
+                adContainer.append(myImg);
+            } else {
+                // Show a persuasion banner instead (if ad container doesn't exist)
+                showPersuasionBanner();
             }
-          ];
-
-          const detected = browsers.find(browser => browser.check());
-          return detected ? detected.name : "Unknown";
         }
 
-        // Enhanced GPU Information
-        function getGPUInfo() {
-          try {
-            const canvas = document.createElement("canvas");
-            const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+        // Display a persuasive message to encourage users to disable their ad blocker
+        function showPersuasionBanner() {
+            const banner = document.createElement('div');
+            banner.innerHTML = `
+                <h3>Ad blocker detected</h3>
+                <p>We use ads to support our free content. Please consider disabling your ad blocker to support us.</p>
+                <button onclick="dismissBanner()">Close</button>
+            `;
+            banner.setAttribute('class', 'alert');
 
-            if (!gl) return { supported: false, error: "WebGL not supported" };
-
-            const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-            const antialiasing = gl.getContextAttributes().antialias;
-            
-            return {
-              supported: true,
-              vendor: debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : "Unknown",
-              renderer: debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Unknown",
-              maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
-              maxViewportDimensions: gl.getParameter(gl.MAX_VIEWPORT_DIMS),
-              antialiasing: antialiasing ? "Enabled" : "Disabled",
-              version: gl.getParameter(gl.VERSION),
-              shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION)
-            };
-          } catch (error) {
-            return { supported: false, error: error.message };
-          }
+            // Prepend the banner to the body
+            document.body.prepend(banner);
         }
 
-        // Enhanced System Resources
-        function getSystemResources() {
-          return {
-            cpu: {
-              cores: navigator.hardwareConcurrency || "Unknown",
-              architecture: navigator.platform || "Unknown"
-            },
-            memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "Not detectable",
-            storage: {
-              quota: navigator.storage ? "Available" : "Not available",
-              persistent: navigator.persistentStorage ? "Supported" : "Not supported"
+        // Dismiss the persuasion banner when the user clicks close
+        function dismissBanner() {
+            const banner = document.querySelector('.alert');
+            if (banner) {
+                banner.style.display = 'none';
             }
-          };
         }
 
-        // Enhanced Network Information
-        function getNetworkInfo() {
-          const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-          if (connection) {
-            return {
-              type: connection.effectiveType || "Unknown",
-              downlinkSpeed: connection.downlink ? `${connection.downlink} Mbps` : "Unknown",
-              rtt: connection.rtt ? `${connection.rtt} ms` : "Unknown",
-              saveData: connection.saveData ? "Enabled" : "Disabled"
-            };
-          }
-          return "Network information not available";
-        }
-
-        // Enhanced User Preferences
-        function getUserPreferences() {
-          return {
-            languages: navigator.languages || [navigator.language],
-            doNotTrack: navigator.doNotTrack || "Not set",
-            cookiesEnabled: navigator.cookieEnabled,
-            prefersReducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-            prefersDarkMode: window.matchMedia("(prefers-color-scheme: dark)").matches,
-            prefersReducedData: window.matchMedia("(prefers-reduced-data: reduce)").matches
-          };
-        }
-
-        // Combine all information
-        return {
-          browser: {
-            name: identifyBrowser(),
-            userAgent: navigator.userAgent,
-            language: navigator.language,
-            cookies: navigator.cookieEnabled,
-            localStorage: !!window.localStorage,
-            sessionStorage: !!window.sessionStorage,
-            webGL: !!window.WebGLRenderingContext
-          },
-          user: {
-            preferences: getUserPreferences(),
-            timezone: Intl.DateTimeFormat().resolvedOptions(),
-            online: navigator.onLine
-          },
-          network: getNetworkInfo(),
-          gpu: getGPUInfo(),
-          system: getSystemResources(),
-          screen: {
-            width: window.screen.width,
-            height: window.screen.height,
-            colorDepth: window.screen.colorDepth,
-            pixelRatio: window.devicePixelRatio,
-            orientation: screen.orientation ? screen.orientation.type : "Unknown",
-            touchScreen: navigator.maxTouchPoints > 0
-          },
-          device: {
-            isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-            platform: navigator.platform,
-            vendor: navigator.vendor || "Unknown",
-            maxTouchPoints: navigator.maxTouchPoints || 0,
-            batteryAPI: "getBattery" in navigator ? "Supported" : "Not supported"
-          }
-        };
-      }
-
-      // Update connection status
-      function updateConnectionStatus() {
-        const statusBadge = document.getElementById('connection-status');
-        if (navigator.onLine) {
-          statusBadge.textContent = 'Online';
-          statusBadge.className = 'status-badge status-online';
-        } else {
-          statusBadge.textContent = 'Offline';
-          statusBadge.className = 'status-badge status-offline';
-        }
-      }
-
-      // Initial display
-      const deviceInfo = getMobileDeviceInfo();
-      console.log(deviceInfo);
-
-      const container = document.getElementById("device-info-container");
-      Object.entries(deviceInfo).forEach(([key, value]) => {
-        const section = document.createElement("div");
-        section.className = "info";
-        const title = document.createElement("h2");
-        title.textContent = key.charAt(0).toUpperCase() + key.slice(1);
-        const content = document.createElement("pre");
-        content.textContent = JSON.stringify(value, null, 2);
-        section.appendChild(title);
-        section.appendChild(content);
-        container.appendChild(section);
-      });
-
-      // Add event listeners for online/offline status
-      window.addEventListener('online', updateConnectionStatus);
-      window.addEventListener('offline', updateConnectionStatus);
-      updateConnectionStatus();
+        // Call the ad block check function
+        adBlockCheck();
     </script>
-  </body>
+</body>
 </html>
